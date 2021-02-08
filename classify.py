@@ -28,7 +28,6 @@ def create_vocabulary(directory, cutoff):
     """
 
     top_level = os.listdir(directory)
-    global a
     a = cutoff
     vocab = {}
     for d in top_level:
@@ -36,7 +35,6 @@ def create_vocabulary(directory, cutoff):
         files = os.listdir(directory+subdir)
         for f in files:
             with open(directory+subdir+f,'r', encoding="utf-8") as doc:
-                #encoding = "utf-8"
                 for word in doc:
                     word = word.strip()
                     if not word in vocab and len(word) > 0:
@@ -56,6 +54,7 @@ def create_bow(vocab, filepath):
     wordcount = 0
     wordcountnone = 0
     c = 0
+
     for i in vocab:
         c+=1
         with open(filepath, 'r', encoding="utf-8") as doc: ###############################################
@@ -67,7 +66,7 @@ def create_bow(vocab, filepath):
                 if(i == str(word)):
                     wordcount += 1
                 #print(wordcount)
-            if(wordcount >= a):
+            if(wordcount > 0):
                 bow[i] = wordcount
         wordcount = 0
     if(wordcountnone != 0):
@@ -93,8 +92,8 @@ def prior(training_data, label_list):
             numfile2 += 1
         numtotal = numfile1 + numfile2
 
-        prob1 = (numfile1+1)/(numtotal+2)
-        prob2 = (numfile2 + 1) / (numtotal + 2)
+        prob1 = (numfile1+smooth)/(numtotal+2)
+        prob2 = (numfile2 + smooth) / (numtotal + 2)
 
         logprob[label_list[0]] = math.log(prob1)
         logprob[label_list[1]] = math.log(prob2)
@@ -109,6 +108,36 @@ def p_word_given_label(vocab, training_data, label):
     smooth = 1 # smoothing factor
     word_prob = {}
     # TODO: add your code here
+    total_label_word = 0
+    total_word = 0
+
+
+    for dic in training_data:
+        #print(dic)
+        for index0, i0 in enumerate(dic['bow']):
+            if (list(dic['bow'])[index0] in word_prob):
+                continue;
+            word_prob[list(dic['bow'])[index0]] = 0
+        if(dic["label"] == label):
+            for index, i in enumerate(dic["bow"]):
+                if(list(dic['bow'])[index] in vocab):
+                    if(list(dic['bow'])[index] in word_prob):
+
+                        word_prob[list(dic['bow'])[index]] += dic["bow"][i]
+                    else:
+                        word_prob[list(dic['bow'])[index]] = dic["bow"][i]
+                else:
+                    if(None in word_prob):
+                        word_prob[None] += dic["bow"][i]
+                    else:
+                        word_prob[None] = dic["bow"][i]
+                total_word += dic["bow"][i]
+            print(total_word)
+        print(word_prob)
+
+    for h in word_prob:
+        word_prob[h] = math.log((word_prob[h] + smooth*1)/(total_word + smooth*(len(vocab) +1)))
+
 
     return word_prob
 
@@ -150,11 +179,22 @@ if __name__ == '__main__':
     vocab = {}
     #vocab = create_vocabulary('./EasyFiles/', 2)
     #print(vocab)
-    #print(create_bow(vocab, './EasyFiles/2016/1.txt'))
+   # print(create_bow(vocab, './EasyFiles/2016/1.txt'))
     #vocab = create_vocabulary('./corpus/training/', 2)
     #training_data = load_training_data(vocab,'./corpus/training/')
     #print(training_data)
-    vocab = create_vocabulary('./corpus/training/', 2)
-    training_data = load_training_data(vocab, './corpus/training/')
-    print(prior(training_data, ['2020', '2016']))
+    #vocab = create_vocabulary('./corpus/training/', 2)
+    #training_data = load_training_data(vocab, './corpus/training/')
+    #print(prior(training_data, ['2020', '2016']))
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #load_data = load_training_data(vocab, './EasyFiles/')
+    #print(load_data)
+    #for x in load_data:
+     #   for key in x["bow"]:
+     #      print(x['bow'][key])
+    vocab = create_vocabulary('./EasyFiles/', 1)
+    training_data = load_training_data(vocab, './EasyFiles/')
+    print(training_data)
+    print(p_word_given_label(vocab, training_data, '2016'))
+
 
