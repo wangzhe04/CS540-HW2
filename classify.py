@@ -132,8 +132,6 @@ def p_word_given_label(vocab, training_data, label):
                     else:
                         word_prob[None] = dic["bow"][i]
                 total_word += dic["bow"][i]
-            print(total_word)
-        print(word_prob)
 
     for h in word_prob:
         word_prob[h] = math.log((word_prob[h] + smooth*1)/(total_word + smooth*(len(vocab) +1)))
@@ -157,7 +155,15 @@ def train(training_directory, cutoff):
     label_list = os.listdir(training_directory)
     # TODO: add your code here
 
-
+    vocal = create_vocabulary(training_directory, cutoff)
+    training_data = load_training_data(vocal, training_directory)
+    log_prior = prior(load_training_data(label_list, training_directory), label_list)
+    label_word2020 = p_word_given_label(vocal,training_data, label_list[1])
+    label_word2016 = p_word_given_label(vocal, training_data, label_list[0])
+    retval['vocabulary'] = vocal
+    retval['log prior'] = log_prior
+    retval['log p(w|y=2020)'] = label_word2020
+    retval['log p(w|y=2016)'] = label_word2016
     return retval
 
 #Needs modifications
@@ -192,9 +198,10 @@ if __name__ == '__main__':
     #for x in load_data:
      #   for key in x["bow"]:
      #      print(x['bow'][key])
-    vocab = create_vocabulary('./EasyFiles/', 1)
-    training_data = load_training_data(vocab, './EasyFiles/')
-    print(training_data)
-    print(p_word_given_label(vocab, training_data, '2016'))
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #training_data = load_training_data(vocab, './EasyFiles/')
+    #print(training_data)
+    #print(p_word_given_label(vocab, training_data, '2016'))
+    train('./EasyFiles/', 2)
 
 
