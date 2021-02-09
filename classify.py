@@ -108,16 +108,18 @@ def p_word_given_label(vocab, training_data, label):
     smooth = 1 # smoothing factor
     word_prob = {}
     # TODO: add your code here
-    total_label_word = 0
     total_word = 0
+
+    word_prob[None] = 0
 
 
     for dic in training_data:
-        #print(dic)
+
         for index0, i0 in enumerate(dic['bow']):
             if (list(dic['bow'])[index0] in word_prob):
                 continue;
             word_prob[list(dic['bow'])[index0]] = 0
+            #word_prob[None] = 0
         if(dic["label"] == label):
             for index, i in enumerate(dic["bow"]):
                 if(list(dic['bow'])[index] in vocab):
@@ -130,17 +132,18 @@ def p_word_given_label(vocab, training_data, label):
                     if(None in word_prob):
                         word_prob[None] += dic["bow"][i]
                     else:
-                        word_prob[None] = dic["bow"][i]
+                        word_prob[None] = 0
+
                 total_word += dic["bow"][i]
+                #word_prob [None] = 5
 
     for h in word_prob:
-        word_prob[h] = math.log((word_prob[h] + smooth*1)/(total_word + smooth*(len(vocab) +1)))
+        word_prob[h] = math.log((word_prob[h] + smooth*1)) - math.log((total_word + smooth*(len(vocab) +1)))
 
 
     return word_prob
 
 
-##################################################################################
 #Needs modifications
 def train(training_directory, cutoff):
     """ return a dictionary formatted as follows:
@@ -162,8 +165,9 @@ def train(training_directory, cutoff):
     label_word2016 = p_word_given_label(vocal, training_data, label_list[0])
     retval['vocabulary'] = vocal
     retval['log prior'] = log_prior
-    retval['log p(w|y=2020)'] = label_word2020
     retval['log p(w|y=2016)'] = label_word2016
+    retval['log p(w|y=2020)'] = label_word2020
+
     return retval
 
 #Needs modifications
@@ -179,13 +183,39 @@ def classify(model, filepath):
     # TODO: add your code here
 
 
+    vocab_x = model['vocabulary']
+    prob_word_2016_total = 0
+    prob_word_2020_total = 0
+
+    bow_doc = create_bow(vocab_x,filepath)
+
+    for i in bow_doc:
+        prob_word_2016_total += model['log p(w|y=2016)'][i] * bow_doc[i]
+        prob_word_2020_total += model['log p(w|y=2020)'][i] * bow_doc[i]
+
+
+    label_2016 = model['log prior']['2016'] + prob_word_2016_total
+    label_2020 = model['log prior']['2020'] + prob_word_2020_total
+
+    if label_2016 > label_2020:
+        label_x = '2016'
+
+    else:
+        label_x = '2020'
+
+    retval['predicted y'] = label_x
+    retval['log p(y=2016|x)'] = label_2016
+    retval['log p(y=2020|x)'] = label_2020
+
+
+
     return retval
 
 if __name__ == '__main__':
     vocab = {}
     #vocab = create_vocabulary('./EasyFiles/', 2)
     #print(vocab)
-   # print(create_bow(vocab, './EasyFiles/2016/1.txt'))
+    #print(create_bow(vocab, './EasyFiles/2016/1.txt'))
     #vocab = create_vocabulary('./corpus/training/', 2)
     #training_data = load_training_data(vocab,'./corpus/training/')
     #print(training_data)
@@ -202,6 +232,54 @@ if __name__ == '__main__':
     #training_data = load_training_data(vocab, './EasyFiles/')
     #print(training_data)
     #print(p_word_given_label(vocab, training_data, '2016'))
-    train('./EasyFiles/', 2)
+    #print(train('./EasyFiles/', 2))
+    #model = train('./corpus/test/', 2)
+    #print(classify(model, './corpus/test/2016/0.txt'))
+
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #print(create_bow(vocab, './EasyFiles/2016/1.txt'))
+
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #print(load_training_data(vocab, './EasyFiles/'))
+
+    #vocab = create_vocabulary('./corpus/training/', 2)
+    #training_data = load_training_data(vocab, './corpus/training/')
+    #print(prior(training_data, ['2020', '2016']))
+
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #training_data = load_training_data(vocab, './EasyFiles/')
+    #print(training_data)
+    #print(p_word_given_label(vocab, training_data, '2016'))
+    #print(p_word_given_label(vocab, training_data, '2020'))
+
+    #print(train('./EasyFiles/', 2))
+####
+    #print(create_vocabulary('./EasyFiles/', 2))
+
+    #vocab = create_vocabulary('./EasyFiles/', 2)
+    #print(create_bow(vocab, './EasyFiles/2016/1.txt'))
+
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #print(load_training_data(vocab, './EasyFiles/'))
+
+    #vocab = create_vocabulary('./corpus/training/', 2)
+    #training_data = load_training_data(vocab, './corpus/training/')
+    #print(prior(training_data, ['2020', '2016']))
+
+    #vocab = create_vocabulary('./EasyFiles/', 1)
+    #training_data = load_training_data(vocab, './EasyFiles/')
+    #print(p_word_given_label(vocab, training_data, '2016'))
+
+    #vocab = create_vocabulary('./EasyFiles/', 2)
+    #training_data = load_training_data(vocab, './EasyFiles/')
+    #print(p_word_given_label(vocab, training_data, '2016'))
+
+    #print(train('./EasyFiles/', 2))
+
+    model = train('./corpus/training/', 2)
+    print(classify(model, './corpus/test/2016/0.txt'))
+
+
+
 
 
